@@ -1,3 +1,4 @@
+// Get HTML Elements
 const playlistSongs = document.getElementById("playlist-songs");
 const playButton = document.getElementById("play");
 const pauseButton = document.getElementById("pause");
@@ -5,6 +6,7 @@ const nextButton = document.getElementById("next");
 const previousButton = document.getElementById("previous");
 const shuffleButton = document.getElementById("shuffle");
 
+// Song List
 const allSongs = [{
         id: 0,
         title: "Scratching The Surface",
@@ -77,29 +79,103 @@ const allSongs = [{
     },
 ];
 
+// Audio Player
 const audio = new Audio();
-
 let userData = {
     songs: [...allSongs],
     currentSong: null,
     songCurrentTime: 0,
 };
 
+// Play Song
+const playSong = (id) => {
+    const song = userData.songs.find((s) => s.id === id);
+    if (!song) return;
+
+    if (!userData.currentSong || userData.currentSong.id !== song.id) {
+        audio.src = song.src;
+        audio.currentTime = 0;
+    } else {
+        audio.currentTime = userData.songCurrentTime;
+    }
+
+    userData.currentSong = song;
+    playButton.classList.add("playing");
+    audio.play();
+};
+
+// Render Songs List
 const renderSongs = (array) => {
-        const songsHTML = array
-            .map((song) => {
-                return `
-      <li id="song-${song.id}" class="playlist-song">
+    playlistSongs.innerHTML = "";
+    array.forEach((song) => {
+        const li = document.createElement("li");
+        li.classList.add("playlist-song");
+
+        li.innerHTML = `
       <button class="playlist-song-info">
           <span class="playlist-song-title">${song.title}</span>
           <span class="playlist-song-artist">${song.artist}</span>
           <span class="playlist-song-duration">${song.duration}</span>
       </button>
       <button class="playlist-song-delete" aria-label="Delete ${song.title}">
-          <svg width="20" height="20" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="8" fill="#4d4d62"/>
-          <path fill-rule="evenodd" clip-rule="evenodd" d="M5.32587 5.18571C5.7107 4.90301 6.28333 4.94814 6.60485 5.28651L8 6.75478L9.39515 5.28651C9.71667 4.94814 10.2893 4.90301 10.6741 5.18571C11.059 5.4684 11.1103 5.97188 10.7888 6.31026L9.1832 7.99999L10.7888 9.68974C11.1103 10.0281 11.059 10.5316 10.6741 10.8143C10.2893 11.097 9.71667 11.0519 9.39515 10.7135L8 9.24521L6.60485 10.7135C6.28333 11.0519 5.7107 11.097 5.32587 10.8143C4.94102 10.5316 4.88969 10.0281 5.21121 9.68974L6.8168 7.99999L5.21122 6.31026C4.8897 5.97188 4.94102 5.4684 5.32587 5.18571Z" fill="white"/></svg>
-        </button>
-      </li>
-      `;
-            })
-            .join("");
+          <svg width="20" height="20" viewBox="0 0 16 16">
+            <circle cx="8" cy="8" r="8" fill="#4d4d62"/>
+            <path fill="white" d="M5.32 5.18c.38-.28.95-.23 1.28.12L8 6.75l1.4-1.47c.33-.35.9-.4 1.28-.12.38.28.43.79.1 1.12L9.18 8l1.6 1.69c.33.33.28.84-.1 1.12-.38.28-.95.23-1.28-.12L8 9.25 6.6 10.7c-.33.35-.9.4-1.28.12-.38-.28-.43-.79-.1-1.12L6.8 8l-1.6-1.69c-.33-.33-.28-.84.1-1.12z"/>
+          </svg>
+      </button>
+    `;
+
+        li.querySelector(".playlist-song-info").addEventListener("click", () =>
+            playSong(song.id)
+        );
+        playlistSongs.appendChild(li);
+    });
+};
+
+// Play Button Logic
+playButton.addEventListener("click", () => {
+    if (!userData.currentSong) {
+        playSong(userData.songs[0].id);
+    } else {
+        audio.play();
+    }
+});
+
+// Pause Button Logic
+pauseButton.addEventListener("click", () => {
+    audio.pause();
+    userData.songCurrentTime = audio.currentTime;
+    playButton.classList.remove("playing");
+});
+
+// Next Song
+nextButton.addEventListener("click", () => {
+    if (!userData.currentSong) return playSong(userData.songs[0].id);
+    let nextIndex =
+        userData.songs.findIndex((s) => s.id === userData.currentSong.id) + 1;
+    if (nextIndex >= userData.songs.length) nextIndex = 0;
+    playSong(userData.songs[nextIndex].id);
+});
+
+// Previous Song
+previousButton.addEventListener("click", () => {
+    if (!userData.currentSong) return playSong(userData.songs[0].id);
+    let prevIndex =
+        userData.songs.findIndex((s) => s.id === userData.currentSong.id) - 1;
+    if (prevIndex < 0) prevIndex = userData.songs.length - 1;
+    playSong(userData.songs[prevIndex].id);
+});
+
+// Shuffle Songs
+shuffleButton.addEventListener("click", () => {
+    userData.songs.sort(() => Math.random() - 0.5);
+    renderSongs(userData.songs);
+});
+
+// Sort Songs Alphabetically
+const sortSongs = () => {
+    return [...userData.songs].sort((a, b) => a.title.localeCompare(b.title));
+};
+
+// Initialize Playlist
+renderSongs(sortSongs());
